@@ -1,8 +1,21 @@
 #include <gtest/gtest.h>
 
 #include <engine/message_bridge.h>
+#include <engine/private/secure_session.h>
+
+#include <fstream>
 
 using namespace llbridge;
+
+constexpr auto secret_file = "secret";
+static void
+make_a_secret()
+{
+    std::ofstream fs(secret_file);
+
+    fs << "01234567890ABCDEF" << std::endl;
+    fs << "FEDCBA09876543210" << std::endl;
+}
 
 TEST(test_messages, header)
 {
@@ -18,6 +31,10 @@ TEST(test_messages, header)
 
 TEST(test_messages, all)
 {
+    make_a_secret();
+
+    auto ec = secure_session_factory::create(secret_file)->create_session();
+
     {
         message_bridge mh;
         ASSERT_TRUE(mh.write(download_file_session_request().make_fixed(11, 22)));

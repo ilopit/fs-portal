@@ -2,7 +2,7 @@
 
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
-cmake_policy(VERSION 3.13)
+cmake_policy(VERSION 3.28)
 
 project ("ll-bridge")
 
@@ -14,5 +14,6 @@ set(BUILD_SHARED_LIBS OFF)
 
 add_subdirectory(thirdparty)
 add_subdirectory(libs)
+add_subdirectory(apps/client)
 add_subdirectory(apps/server)
 add_subdirectory(tests)

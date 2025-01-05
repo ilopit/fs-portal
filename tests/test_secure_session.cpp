@@ -1,5 +1,6 @@
 #include <engine/private/secure_session.h>
 #include <engine/message.h>
+#include <fstream>
 
 #include "botan_all.h"
 
@@ -7,9 +8,21 @@
 
 using namespace llbridge;
 
+constexpr auto secret_file = "secret";
+void
+make_a_secret()
+{
+    std::ofstream fs(secret_file);
+
+    fs << "01234567890ABCDEF" << std::endl;
+    fs << "FEDCBA09876543210" << std::endl;
+}
+
 TEST(test_encryption, fixed)
 {
-    auto ec = secure_session::create();
+    make_a_secret();
+
+    auto ec = secure_session_factory::create(secret_file)->create_session();
 
     message_header mh{};
 
@@ -49,7 +62,9 @@ TEST(test_encryption, fixed)
 
 TEST(test_encryption, dynamic)
 {
-    auto ec = secure_session::create();
+    make_a_secret();
+
+    auto ec = secure_session_factory::create(secret_file)->create_session();
 
     message_header mh{};
 

@@ -7,6 +7,7 @@
 #include <boost/array.hpp>
 
 #include "engine/private/session.h"
+#include "engine/private/secure_session.h"
 
 using byte = unsigned char;
 
@@ -95,6 +96,13 @@ communication_context::send_bytes(uint64_t expected)
     SPDLOG_TRACE("Sended {}", expected);
 
     return size;
+}
+
+communication_context::communication_context(boost::asio::ip::tcp::socket* s,
+                                             std::unique_ptr<secure_session> secure)
+    : m_socket(s)
+    , m_bridge(std::move(secure))
+{
 }
 
 void

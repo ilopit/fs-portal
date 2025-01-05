@@ -8,6 +8,7 @@
 #include <engine/private/file_read_cache.h>
 #include <engine/files_list.h>
 #include <engine/client.h>
+#include <engine/private/secure_session.h>
 
 namespace llbridge
 {
@@ -26,9 +27,12 @@ public:
         uint64_t offset = 0;
     };
 
-    client_impl(std::unique_ptr<client_transport_context> impl, std::filesystem::path root)
+    client_impl(std::unique_ptr<client_transport_context> impl,
+                std::unique_ptr<secure_session_factory> secure,
+                std::filesystem::path root)
         : m_transport(std::move(impl))
         , m_root(std::move(root))
+        , m_secure_factory(std::move(secure))
     {
     }
 
@@ -39,12 +43,16 @@ public:
     }
 
     static void
-    worker_thread(worker_ctx wctx, client_transport_context& ctx, file_recombinator& fapi);
+    worker_thread(worker_ctx wctx,
+                  client_transport_context& ctx,
+                  std::unique_ptr<secure_session> secure,
+                  file_recombinator& fapi);
 
     file_list m_lm;
     std::filesystem::path m_root;
     client::config m_settings;
     std::unique_ptr<client_transport_context> m_transport;
+    std::unique_ptr<secure_session_factory> m_secure_factory;
 };
 
 }  // namespace llbridge

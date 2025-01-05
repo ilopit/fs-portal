@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <filesystem>
 
 #include "botan_all.h"
 
@@ -11,10 +12,9 @@ struct message_header;
 
 class secure_session
 {
-public:
-    static std::unique_ptr<secure_session>
-    create();
+    friend class secure_session_factory;
 
+public:
     secure_session();
 
     void
@@ -36,6 +36,24 @@ private:
 
     std::unique_ptr<Botan::AEAD_Mode> m_encryption;
     std::unique_ptr<Botan::AEAD_Mode> m_decryption;
+};
+
+class secure_session_factory
+{
+public:
+    static std::unique_ptr<secure_session_factory>
+    create(const std::filesystem::path& secret);
+
+    std::unique_ptr<secure_session>
+    create_session();
+
+private:
+    secure_session_factory()
+        : m_application_session_key(16)
+    {
+    }
+
+    Botan::secure_vector<uint8_t> m_application_session_key;
 };
 
 }  // namespace llbridge

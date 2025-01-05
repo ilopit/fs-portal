@@ -11,6 +11,7 @@ class secure_session;
 
 struct message_bridge
 {
+    message_bridge(std::unique_ptr<secure_session> secure);
     message_bridge();
     ~message_bridge();
 
@@ -116,7 +117,7 @@ private:
     bool
     decrypt();
 
-    std::unique_ptr<secure_session> encyption_layer;
+    std::unique_ptr<secure_session> m_encyption_layer;
 
     std::vector<std::uint8_t> fctx;
     std::vector<std::uint8_t> dctx;

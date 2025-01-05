@@ -32,11 +32,7 @@ struct communication_context
 {
     communication_context() = default;
 
-    communication_context(boost::asio::ip::tcp::socket* s)
-        : m_socket(s)
-        , m_bridge()
-    {
-    }
+    communication_context(boost::asio::ip::tcp::socket* s, std::unique_ptr<secure_session> secure);
 
     template <typename T>
     bool

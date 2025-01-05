@@ -5,28 +5,28 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bin_to_hex.h>
 
+#include <fstream>
 namespace llbridge
 {
 
-namespace
+std::unique_ptr<secure_session_factory>
+secure_session_factory::create(const std::filesystem::path& secret)
 {
-Botan::secure_vector<uint8_t>
-generate_app_key()
-{
-    static Botan::secure_vector<uint8_t> application_session_key;
+    std::ifstream secret_file(secret);
 
-    static std::mutex gen_lock;
-
-    std::lock_guard<std::mutex> lg(gen_lock);
-
-    if (!application_session_key.empty())
+    if (!secret_file.is_open())
     {
-        return application_session_key;
+        SPDLOG_ERROR("Secret doesn't exist at {}", secret.generic_string());
+        return nullptr;
     }
-    application_session_key.resize(16);
 
-    auto master_key = Botan::hex_decode("0123456789ABCDEF");
-    auto salt = Botan::hex_decode("0123456789ABCDEF");
+    std::string v;
+
+    std::getline(secret_file, v);
+    auto master_key = Botan::hex_decode(v.data(), v.size());
+
+    std::getline(secret_file, v);
+    auto salt = Botan::hex_decode(v.data(), v.size());
 
 #if defined(_DEBUG)
     constexpr size_t M = 16;
@@ -43,15 +43,14 @@ generate_app_key()
 
     std::string_view password;
 
-    pbkdf->hash(application_session_key, password, salt);
+    auto ssf = std::unique_ptr<secure_session_factory>();
+    pbkdf->hash(ssf->m_application_session_key, password, salt);
 
-    return application_session_key;
+    return ssf;
 }
 
-}  // namespace
-
 std::unique_ptr<secure_session>
-secure_session::create()
+secure_session_factory::create_session()
 {
     auto obj = std::make_unique<secure_session>();
 
@@ -61,7 +60,7 @@ secure_session::create()
     obj->m_decryption =
         Botan::AEAD_Mode::create_or_throw("AES-128/GCM", Botan::Cipher_Dir::Decryption);
 
-    obj->m_application_session_key = generate_app_key();
+    obj->m_application_session_key = m_application_session_key;
 
     return obj;
 }

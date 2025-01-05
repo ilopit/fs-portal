@@ -9,6 +9,7 @@
 void
 llbridge::client_impl::worker_thread(worker_ctx wctx,
                                      client_transport_context& ctx,
+                                     std::unique_ptr<secure_session> secure,
                                      file_recombinator& fapi)
 {
     boost::asio::ip::tcp::socket socket{ctx.io_context};
@@ -16,7 +17,7 @@ llbridge::client_impl::worker_thread(worker_ctx wctx,
 
     SPDLOG_WARN("Worker started {}", wctx.thread_id);
 
-    communication_context cc(&socket);
+    communication_context cc(&socket, std::move(secure));
 
     std::vector<write_result_ptr> requests;
 

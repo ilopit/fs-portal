@@ -3,6 +3,7 @@
 #include "engine/private/session.h"
 #include "engine/private/server_context.h"
 #include "engine/private/server_impl.h"
+#include "engine/private/secure_session.h"
 
 #include <boost/asio.hpp>
 #include <iostream>
@@ -28,7 +29,9 @@ server::make(const config& cfg)
 {
     auto ctx = server_transport_context::make(cfg.port);
 
-    auto impl = std::make_unique<server_impl>(cfg.root_dir, std::move(ctx));
+    auto ssf = secure_session_factory::create(cfg.secret_file);
+
+    auto impl = std::make_unique<server_impl>(cfg.root_dir, std::move(ctx), std::move(ssf));
 
     impl->m_file_list = file_list::init(cfg.root_dir);
 

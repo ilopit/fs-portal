@@ -11,7 +11,7 @@
 #include "engine/private/utils.h"
 #include "engine/private/client_impl.h"
 #include "engine/private/file_recombinator.h"
-#include "engine/private/client_impl.h"
+#include "engine/private/secure_session.h"
 #include "engine/private/client_transport_context.h"
 
 #include <spdlog/spdlog.h>
@@ -23,8 +23,9 @@ client
 client::make(const config& cfg)
 {
     auto ctx = client_transport_context::make(cfg.ip, cfg.port);
+    auto secure = secure_session_factory::create(cfg.secret);
 
-    auto impl = std::make_unique<client_impl>(std::move(ctx), cfg.root);
+    auto impl = std::make_unique<client_impl>(std::move(ctx), std::move(secure), cfg.root);
 
     return client(std::move(impl));
 }
@@ -41,7 +42,8 @@ client::open()
 
     hello_request hr{};
 
-    communication_context cc(&m_impl->transport().socket);
+    communication_context cc(&m_impl->transport().socket,
+                             m_impl->m_secure_factory->create_session());
     bool result = cc.send(std::move(hr));
     if (!result)
     {
@@ -81,7 +83,8 @@ client::sync_all()
 bool
 client::sync(uint64_t file_id)
 {
-    communication_context cc(&m_impl->transport().socket);
+    communication_context cc(&m_impl->transport().socket,
+                             m_impl->m_secure_factory->create_session());
     const uint64_t chunk_size = 1024 * 1024 * 8;
     auto df_request = download_file_session_request().make_fixed(file_id, chunk_size);
 
@@ -126,7 +129,8 @@ client::sync(uint64_t file_id)
     {
         thread_context.thread_id = i;
         threads.emplace_back(client_impl::worker_thread, thread_context,
-                             std::ref(m_impl->transport()), std::ref(fapi));
+                             std::ref(m_impl->transport()),
+                             m_impl->m_secure_factory->create_session(), std::ref(fapi));
     }
 
     for (auto& t : threads)

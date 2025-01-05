@@ -43,7 +43,7 @@ connection_session::connection_session(std::shared_ptr<server_impl> ss,
                                        boost::asio::ip::tcp::socket socket)
     : m_server_impl(std::move(ss))
     , m_socket(std::move(socket))
-    , m_ctx(&m_socket)
+    , m_ctx(&m_socket, ss->m_secure_session->create_session())
 {
 }
 

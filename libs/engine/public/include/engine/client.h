@@ -17,7 +17,8 @@ public:
     {
         std::string port = "5050";
         std::string ip = "127.0.0.1";
-        std::filesystem::path root = std::filesystem::current_path();
+        std::filesystem::path root = std::filesystem::current_path() / "root";
+        std::filesystem::path secret = std::filesystem::current_path() / "config/secret";
     };
 
     static client

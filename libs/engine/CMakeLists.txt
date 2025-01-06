@@ -1,21 +1,22 @@
 add_library(engine 
+    "public/include/engine/communication_context.h"
     "public/include/engine/client.h"
     "public/include/engine/files_list.h"
     "public/include/engine/message.h"
     "public/include/engine/message_bridge.h"
     "public/include/engine/server.h"
-    "public/include/engine/communication_context.h"
 
-    "private/include/engine/private/secure_session.h"
     "private/include/engine/private/binary_stream.h"
     "private/include/engine/private/client_transport_context.h"
     "private/include/engine/private/client_impl.h"
     "private/include/engine/private/file_recombinator.h"
-    "private/include/engine/private/session.h"
+    "private/include/engine/private/psx_file.h"
+    "private/include/engine/private/secure_session.h"
     "private/include/engine/private/server_context.h"
     "private/include/engine/private/server_impl.h"
+    "private/include/engine/private/session.h"
+    "private/include/engine/private/stats.h"
     "private/include/engine/private/utils.h"
-    "private/include/engine/private/psx_file.h"
 
     "private/src/secure_session.cpp"
     "private/src/binary_stream.cpp"
@@ -33,6 +34,7 @@ add_library(engine
     "private/src/session.cpp"
     "private/src/server_context.cpp"
     "private/src/server_impl.cpp"
+    "private/src/stats.cpp"
     "private/src/utils.cpp"
 )
 

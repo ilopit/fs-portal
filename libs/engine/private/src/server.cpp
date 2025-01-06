@@ -101,7 +101,9 @@ server::start_impl()
 
                 // create a session where we immediately call the run function
                 // note: the socket is passed to the lambda here
-                std::make_shared<connection_session>(m_impl, std::move(socket))->run();
+                std::make_shared<connection_session>(m_impl, std::move(socket),
+                                                     &m_impl->m_statistics)
+                    ->run();
             }
             else
             {

@@ -6,6 +6,7 @@
 #include <engine/message.h>
 #include <engine/private/server_context.h>
 #include <engine/private/server_impl.h>
+#include <engine/private/stats.h>
 
 #include <filesystem>
 #include <fstream>
@@ -40,10 +41,11 @@ get_available_files()
 }  // namespace
 
 connection_session::connection_session(std::shared_ptr<server_impl> ss,
-                                       boost::asio::ip::tcp::socket socket)
+                                       boost::asio::ip::tcp::socket socket,
+                                       statistics* s)
     : m_server_impl(std::move(ss))
     , m_socket(std::move(socket))
-    , m_ctx(&m_socket, ss->m_secure_session->create_session())
+    , m_ctx(&m_socket, ss->m_secure_session->create_session(), s)
 {
 }
 

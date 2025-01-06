@@ -5,6 +5,7 @@
 
 #include <engine/private/file_read_cache.h>
 #include <engine/private/secure_session.h>
+#include <engine/private/stats.h>
 
 #include <filesystem>
 #include <memory>
@@ -40,12 +41,14 @@ public:
     worker_thread(worker_ctx wctx,
                   client_transport_context& ctx,
                   std::unique_ptr<secure_session> secure,
-                  file_recombinator& fapi);
+                  file_recombinator& fapi,
+                  statistics* s);
 
     file_list m_lm;
     client::config m_cfg;
     std::unique_ptr<client_transport_context> m_transport;
     std::unique_ptr<secure_session_factory> m_secure_factory;
+    statistics m_stats;
 };
 
 }  // namespace llbridge

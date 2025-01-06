@@ -7,32 +7,19 @@
 #include <engine/message_bridge.h>
 #include <spdlog/spdlog.h>
 
-// Primary template (default case: false)
-template <template <typename...> class Template, typename T>
-struct belongs_to_template : std::false_type
-{
-};
-
-// Partial specialization (true if T matches the Template instance)
-template <template <typename...> class Template, typename... Args>
-struct belongs_to_template<Template, Template<Args...>> : std::true_type
-{
-};
-
-// Helper variable template for convenience
-template <template <typename...> class Template, typename T>
-constexpr bool belongs_to_template_v = belongs_to_template<Template, T>::value;
-
 namespace llbridge
 {
 struct message_header;
 class connection_session;
+class statistics;
 
 struct communication_context
 {
-    communication_context() = default;
+    communication_context() = delete;
 
-    communication_context(boost::asio::ip::tcp::socket* s, std::unique_ptr<secure_session> secure);
+    communication_context(boost::asio::ip::tcp::socket* s,
+                          std::unique_ptr<secure_session> secure,
+                          statistics* stats);
 
     template <typename T>
     bool
@@ -103,9 +90,6 @@ struct communication_context
     }
 
     void
-    receive_async(std::shared_ptr<connection_session> self);
-
-    void
     on_init_received()
     {
     }
@@ -139,6 +123,7 @@ struct communication_context
     }
 
     message_bridge m_bridge;
+    statistics* m_stats;
 
     boost::asio::ip::tcp::socket* m_socket = nullptr;
 };

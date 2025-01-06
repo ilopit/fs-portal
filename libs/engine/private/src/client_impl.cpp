@@ -17,6 +17,7 @@ client_impl::client_impl(std::unique_ptr<client_transport_context> impl,
     , m_cfg(std::move(cfg))
     , m_transport(std::move(impl))
     , m_secure_factory(std::move(secure))
+    , m_stats(std::chrono::milliseconds(2000))
 {
 }
 
@@ -24,7 +25,8 @@ void
 client_impl::worker_thread(worker_ctx wctx,
                            client_transport_context& ctx,
                            std::unique_ptr<secure_session> secure,
-                           file_recombinator& fapi)
+                           file_recombinator& fapi,
+                           statistics* s)
 {
     auto conn = ctx.connect();
     if (!conn)
@@ -34,7 +36,7 @@ client_impl::worker_thread(worker_ctx wctx,
 
     SPDLOG_WARN("Worker started {}", wctx.thread_id);
 
-    communication_context cc(&conn->socket(), std::move(secure));
+    communication_context cc(&conn->socket(), std::move(secure), s);
 
     std::vector<write_result_ptr> requests;
 

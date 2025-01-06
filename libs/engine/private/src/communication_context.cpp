@@ -8,16 +8,12 @@
 
 #include "engine/private/session.h"
 #include "engine/private/secure_session.h"
+#include "engine/private/stats.h"
 
 using byte = unsigned char;
 
 namespace llbridge
 {
-
-void
-communication_context::receive_async(std::shared_ptr<connection_session> self)
-{
-}
 
 uint64_t
 communication_context::receive_extra_bytes(uint64_t expected)
@@ -47,6 +43,7 @@ communication_context::receive_extra_bytes(uint64_t expected)
     {
         SPDLOG_ERROR("receive_bytes failed [0]", ec.what());
     }
+    m_stats->update_received(expected);
 
     SPDLOG_TRACE("Received {}", size);
 
@@ -70,6 +67,7 @@ communication_context::receive_fixed_bytes()
     {
         SPDLOG_ERROR("receive_bytes failed {}", ec.what());
     }
+    m_stats->update_received(size);
 
     SPDLOG_TRACE("Received {}", size);
 
@@ -92,16 +90,19 @@ communication_context::send_bytes(uint64_t expected)
     {
         SPDLOG_ERROR("send_bytes failed [0]", ec.what());
     }
+    m_stats->update_send(size);
 
-    SPDLOG_TRACE("Sended {}", expected);
+    SPDLOG_TRACE("Sended {}", size);
 
     return size;
 }
 
 communication_context::communication_context(boost::asio::ip::tcp::socket* s,
-                                             std::unique_ptr<secure_session> secure)
+                                             std::unique_ptr<secure_session> secure,
+                                             statistics* stats)
     : m_socket(s)
     , m_bridge(std::move(secure))
+    , m_stats(stats)
 {
 }
 
@@ -114,12 +115,12 @@ communication_context::wait_for_msg(std::function<void(bool)> handler)
         boost::asio::transfer_exactly(size),
         [this, size, handler](const boost::system::error_code& error, std::size_t bytes_transferred)
         {
+            m_stats->update_received(bytes_transferred);
             if (size != bytes_transferred || error)
             {
                 handler(false);
                 return;
             }
-
             auto extra_size = m_bridge.get_header()->encypted_extra_size();
 
             if (extra_size == 0)
@@ -134,8 +135,8 @@ communication_context::wait_for_msg(std::function<void(bool)> handler)
                     [extra_size, handler, this](const boost::system::error_code& error,
                                                 std::size_t bytes_transferred)
                     {
+                        m_stats->update_received(bytes_transferred);
                         handler(extra_size == bytes_transferred && !error);
-
                         return true;
                     });
             }

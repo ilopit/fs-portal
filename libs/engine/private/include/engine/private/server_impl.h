@@ -5,9 +5,10 @@
 #include <string>
 #include <cstdint>
 
-#include <engine/private/file_read_cache.h>
 #include <engine/files_list.h>
+#include <engine/private/file_read_cache.h>
 #include <engine/private/secure_session.h>
+#include <engine/private/stats.h>
 
 namespace llbridge
 {
@@ -31,6 +32,7 @@ public:
         , m_file_list()
         , m_transport(std::move(transport))
         , m_secure_session(std::move(ssf))
+        , m_statistics(std::chrono::milliseconds(2000))
 
     {
     }
@@ -48,6 +50,7 @@ public:
 
     std::unique_ptr<server_transport_context> m_transport;
     std::unique_ptr<secure_session_factory> m_secure_session;
+    statistics m_statistics;
 };
 
 }  // namespace llbridge

@@ -57,7 +57,8 @@ client::open()
 
     hello_request hr{};
 
-    communication_context cc(&conn->socket(), m_impl->m_secure_factory->create_session());
+    communication_context cc(&conn->socket(), m_impl->m_secure_factory->create_session(),
+                             &m_impl->m_stats);
     bool result = cc.send(std::move(hr));
     if (!result)
     {
@@ -134,7 +135,8 @@ client::sync(uint64_t file_id)
 
     auto resule_cunks = fapi.get_completed_chunks();
 
-    communication_context cc(&conn->socket(), m_impl->m_secure_factory->create_session());
+    communication_context cc(&conn->socket(), m_impl->m_secure_factory->create_session(),
+                             &m_impl->m_stats);
 
     auto df_request = download_file_session_request().make_fixed(file_id, m_impl->m_cfg.block_size,
                                                                  fapi.get_resume_point());
@@ -161,9 +163,9 @@ client::sync(uint64_t file_id)
     for (int i = 0; i < m_impl->m_cfg.number_of_loaders; ++i)
     {
         thread_context.thread_id = i;
-        threads.emplace_back(client_impl::worker_thread, thread_context,
-                             std::ref(m_impl->transport()),
-                             m_impl->m_secure_factory->create_session(), std::ref(fapi));
+        threads.emplace_back(
+            client_impl::worker_thread, thread_context, std::ref(m_impl->transport()),
+            m_impl->m_secure_factory->create_session(), std::ref(fapi), &m_impl->m_stats);
     }
 
     for (auto& t : threads)

@@ -10,17 +10,11 @@ namespace llbridge
 {
 class server_impl;
 class server_context;
+class statistics;
 
 class connection_session : public std::enable_shared_from_this<connection_session>
 {
 public:
-    enum class state : uint32_t
-    {
-        init = 0,
-        wait_for_request,
-        sending
-    };
-
     enum class message_result : uint32_t
     {
         next = 0,
@@ -29,7 +23,9 @@ public:
     };
 
     // our session holds the socket
-    connection_session(std::shared_ptr<server_impl> ss, boost::asio::ip::tcp::socket socket);
+    connection_session(std::shared_ptr<server_impl> ss,
+                       boost::asio::ip::tcp::socket socket,
+                       statistics* s);
 
     // and run was already called in our server, where we just wait for requests
     void
@@ -66,7 +62,6 @@ private:
 
     boost::asio::ip::tcp::socket m_socket;
 
-    state m_state = state::init;
     uint64_t m_total_read = 0;
     bool m_loading_tail = false;
 

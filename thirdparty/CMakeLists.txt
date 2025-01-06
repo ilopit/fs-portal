@@ -49,7 +49,7 @@ if (BOTAN_COMPILER_ID STREQUAL "gnu")
     set(BOTAN_COMPILER_ID "gcc")
 endif()
 
-execute_process(COMMAND python
+execute_process(COMMAND python3
     ${botan_upstream_SOURCE_DIR}/configure.py
     --quiet
     --cc-bin=${CMAKE_CXX_COMPILER}

@@ -2,17 +2,19 @@
 
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 
-cmake_policy(VERSION 3.28)
+cmake_policy(VERSION 3.25)
 
 project ("ll-bridge")
 
 #set up cmake
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(BUILD_SHARED_LIBS OFF)
 
+
 add_subdirectory(thirdparty)
+
 add_subdirectory(libs)
 add_subdirectory(apps/client)
 add_subdirectory(apps/server)

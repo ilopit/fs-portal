@@ -6,6 +6,17 @@
 
 #include <boost/asio.hpp>
 
+llbridge::client_impl::client_impl(std::unique_ptr<llbridge::client_transport_context> impl,
+                std::unique_ptr<llbridge::secure_session_factory> secure,
+                std::filesystem::path root)
+        : m_transport(std::move(impl))
+        , m_root(std::move(root))
+        , m_secure_factory(std::move(secure))
+    {
+    }
+
+
+
 void
 llbridge::client_impl::worker_thread(worker_ctx wctx,
                                      client_transport_context& ctx,

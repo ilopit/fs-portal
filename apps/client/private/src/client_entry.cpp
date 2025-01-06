@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 #include <iostream>
 #include <string>
+#include <optional>
 
 using namespace llbridge;
 

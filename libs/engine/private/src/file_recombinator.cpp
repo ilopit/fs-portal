@@ -208,7 +208,8 @@ file_recombinator::worker_thread()
                 goto clean_up;
             }
 
-            if (fh.write(dcp->data) != dcp->get_size())
+            auto wr_size = fh.write(dcp->data);
+            if (wr_size != dcp->get_size())
             {
                 SPDLOG_ERROR("fwrite failed {}", dcp->get_size());
                 goto clean_up;

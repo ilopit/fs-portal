@@ -3,27 +3,52 @@
 #include <engine/server.h>
 #include <engine/client.h>
 #include <engine/communication_context.h>
+#include <filesystem>
 
 #include "testing_utils.h"
 
-TEST(test_llbridge, sync_file)
+namespace
 {
-    testing_utils::make_a_secret();
+const std::filesystem::path big_file = "super_secret_file";
+const std::filesystem::path server_root = "server_root";
+const std::filesystem::path client_root = "client_root";
+}  // namespace
 
-    std::error_code ec;
-    std::filesystem::remove("sd//rr", ec);
+struct test_llbridge : public ::testing::Test
+{
+    void
+    SetUp()
+    {
+        testing_utils::make_a_secret();
 
-    auto srv = llbridge::server::make({.port = "5051", .root = "D://movies", .secret = "secret"});
+        std::error_code ec;
+        std::filesystem::remove(server_root, ec);
+        std::filesystem::create_directory(server_root, ec);
+
+        auto str = fmt::format("openssl rand -out {}/{} --base64 {}", server_root.generic_string(),
+                               big_file.generic_string(), (1 << 23));
+        ::system(str.c_str());
+    }
+};
+
+TEST_F(test_llbridge, sync_file)
+{
+    auto srv = llbridge::server::make({.port = "5051", .root = server_root, .secret = "secret"});
     ASSERT_TRUE(srv.start());
 
-    auto client = llbridge::client::make({.port = "5051", .ip = "127.0.0.1", .secret = "secret"});
+    auto client = llbridge::client::make({.port = "5051",
+                                          .ip = "127.0.0.1",
+                                          .root = std::filesystem::absolute(client_root),
+                                          .secret = "secret"});
 
     ASSERT_TRUE(client.open());
 
-    ASSERT_TRUE(client.sync(3));
+    ASSERT_TRUE(client.sync(0));
 
     srv.stop();
 
-    auto result = system("cmp D://movies//sd//rr root//sd//rr");
-    ASSERT_EQ(result, 0);
+    auto str =
+        fmt::format("cmp {}/{} {}/{}", server_root.generic_string(), big_file.generic_string(),
+                    client_root.generic_string(), big_file.generic_string());
+    ASSERT_EQ(::system(str.c_str()), 0);
 }

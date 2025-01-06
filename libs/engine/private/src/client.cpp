@@ -1,14 +1,11 @@
 #include <engine/client.h>
 
 #include <boost/asio.hpp>
-#include <iostream>
-#include <fstream>
 #include <filesystem>
 
 #include "engine/communication_context.h"
 
 #include "engine/message.h"
-#include "engine/private/utils.h"
 #include "engine/private/client_impl.h"
 #include "engine/private/file_recombinator.h"
 #include "engine/private/secure_session.h"
@@ -42,8 +39,8 @@ client::make(const config& cfg)
     return client(std::move(impl));
 }
 
-client::client() = default;
-client::~client() = default;
+client::client()  {};
+client::~client()  {};
 
 bool
 client::open()

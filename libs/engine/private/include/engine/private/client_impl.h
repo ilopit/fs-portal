@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <memory>
-#include <string>
 #include <cstdint>
 
 #include <engine/private/file_read_cache.h>
@@ -29,12 +28,7 @@ public:
 
     client_impl(std::unique_ptr<client_transport_context> impl,
                 std::unique_ptr<secure_session_factory> secure,
-                std::filesystem::path root)
-        : m_transport(std::move(impl))
-        , m_root(std::move(root))
-        , m_secure_factory(std::move(secure))
-    {
-    }
+                std::filesystem::path root);
 
     client_transport_context&
     transport()

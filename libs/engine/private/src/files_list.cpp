@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 #include <iostream>
 
+
 namespace llbridge
 {
 
@@ -53,7 +54,7 @@ file_list::print()
 
     for (auto& f : list)
     {
-        std::cout << std::format("{:<5} | {:<30} | {:<10}", id++, f.path.generic_string(), f.size)
+        std::cout << fmt::format("{:<5} | {:<30} | {:<10}", id++, f.path.generic_string(), f.size)
                   << std::endl;
     }
 }

@@ -1,22 +1,29 @@
-#include <engine/private/file.h>
+#include <engine/private/psx_file.h>
 
 #include <fcntl.h>
 #include <stdio.h>
 #include <vector>
-#include <unistd.h>
 
-#if defined(WINDOWS)
+#if defined(_WIN32)
 
 #include <windows.h>
 #include <io.h>
 
-#define psx_open(path, flags) ::open(path, flags)
-#define psx_close(fd) ::close(fd)
-#define psx_write(fd, data, size) ::write(fd, data, size)
+#define psx_open(path, flags) ::_open(path, flags)
+#define psx_close(fd) ::_close(fd)
+#define psx_write(fd, data, size) ::_write(fd, data, size)
 #define psx_seek(fd, offset, mode) ::_lseeki64(fd, offset, mode)
+#define psx_sync(fd) ::_commit(fd)
+
+enum
+{
+    psx_binary = _O_BINARY,
+    psx_create = _O_CREAT,
+    psx_rdwd = _O_RDWR
+};
 
 #else
-
+#include <unistd.h>
 #define psx_open(path, flags) ::open(path, flags)
 #define psx_close(fd) ::close(fd)
 #define psx_write(fd, data, size) ::write(fd, data, size)
@@ -36,13 +43,13 @@ enum
 
 using namespace llbridge;
 
-file::file(const std::filesystem::path& path)
+psx_file::psx_file(const std::filesystem::path& path)
     : m_handle(-1)
 {
     (void)open(path);
 }
 
-file::~file()
+psx_file::~psx_file()
 {
     if (m_handle != -1)
     {
@@ -53,18 +60,18 @@ file::~file()
 }
 
 bool
-file::is_open() const
+psx_file::is_open() const
 {
     return m_handle != -1;
 }
 
-file::file()
+psx_file::psx_file()
     : m_handle(-1)
 {
 }
 
 bool
-file::open(const std::filesystem::path& path)
+psx_file::open(const std::filesystem::path& path)
 {
     if (m_handle != -1)
     {
@@ -77,19 +84,19 @@ file::open(const std::filesystem::path& path)
 }
 
 uint64_t
-file::write(const std::vector<uint8_t>& data)
+psx_file::write(const std::vector<uint8_t>& data)
 {
     return psx_write(m_handle, data.data(), data.size());
 }
 
 bool
-file::seek_to(uint64_t offset, int mode)
+psx_file::seek_to(uint64_t offset, int mode)
 {
     return psx_seek(m_handle, offset, mode) != -1;
 }
 
 bool
-file::flush()
+psx_file::flush()
 {
     return psx_sync(m_handle) == 0;
 }

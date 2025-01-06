@@ -20,7 +20,26 @@ client_main(int argc, char** argv)
     {
         std::string value = argv[i];
 
-        if (value.starts_with("--port="))
+        if (value.starts_with("--config="))
+        {
+            std::string path = value.substr(sizeof("--config=") - 1);
+            if (!cfg.update_from_config(path))
+            {
+                SPDLOG_ERROR("Failed to read config at {}", path);
+                return -1;
+            }
+        }
+    }
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string value = argv[i];
+
+        if (value.starts_with("--config="))
+        {
+            continue;
+        }
+        else if (value.starts_with("--port="))
         {
             cfg.port = value.substr(sizeof("--port=") - 1);
         }

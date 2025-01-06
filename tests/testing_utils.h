@@ -14,4 +14,12 @@ struct testing_utils
         fs << "0123456789ABCDEF" << std::endl;
         fs << "FEDCBA9876543210" << std::endl;
     }
+
+    static void
+    make_config(const std::filesystem::path& path, const std::string& content)
+    {
+        std::ofstream fs(path);
+
+        fs << content;
+    }
 };

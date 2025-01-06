@@ -93,5 +93,84 @@ private:
     bool m_signaled = false;
 };
 
+struct load_commmnd
+{
+    using generic_reader = std::function<bool(const std::string& v, void* dst)>;
+
+    static generic_reader
+    to_generic_reader(const std::string&)
+    {
+        return read_string;
+    }
+
+    static generic_reader
+    to_generic_reader(const uint64_t&)
+    {
+        return read_uint64;
+    }
+
+    static generic_reader
+    to_generic_reader(const std::filesystem::path&)
+    {
+        return read_path;
+    }
+
+    std::string name;
+    generic_reader loader;
+    void* field_ptr = nullptr;
+
+    static bool
+    read_string(const std::string& value, void* dst)
+    {
+        *((std::string*)dst) = value;
+
+        return true;
+    }
+
+    static bool
+    read_uint64(const std::string& value, void* dst)
+    {
+        *((std::uint64_t*)dst) = std::stoull(value);
+
+        return true;
+    }
+
+    static bool
+    read_path(const std::string& value, void* dst)
+    {
+        *((std::filesystem::path*)dst) = value;
+
+        return true;
+    }
+};
+
+struct load_commmnds_builder
+{
+    template <typename T>
+    load_commmnds_builder&
+    add(const std::string& name, T& value)
+    {
+        cmds[name] = load_commmnd{
+            .name = name, .loader = load_commmnd::to_generic_reader(value), .field_ptr = &value};
+
+        return *this;
+    };
+
+    std::unordered_map<std::string, load_commmnd>
+    finalize()
+    {
+        return std::move(cmds);
+    }
+
+    std::unordered_map<std::string, load_commmnd> cmds;
+};
+
+struct generic_kv
+{
+    static bool
+    load(const std::filesystem::path& location,
+         const std::unordered_map<std::string, load_commmnd>& cmds);
+};
+
 }  // namespace utils
 }  // namespace llbridge

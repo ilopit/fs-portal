@@ -15,14 +15,23 @@ class client
 public:
     struct config
     {
+        bool
+        update_from_config(const std::filesystem::path& p);
+
+        void
+        print();
+
         std::string port = "53881";
         std::string ip = "127.0.0.1";
         std::filesystem::path root = std::filesystem::current_path() / "root";
         std::filesystem::path secret = std::filesystem::current_path() / "config/secret";
+        uint64_t block_size = 1024U * 1024U * 1U;
+        uint64_t number_of_loaders = 8U;
+        uint64_t blocks_in_batch = 8U;
     };
 
     static client
-    make(const config& cfg);
+    make(config cfg);
 
     client();
     ~client();
@@ -42,9 +51,9 @@ public:
     bool
     sync(uint64_t file_id);
 
+private:
     client(std::unique_ptr<client_impl> impl);
 
-private:
     std::unique_ptr<client_impl> m_impl;
 };
 

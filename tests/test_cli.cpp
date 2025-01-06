@@ -27,7 +27,19 @@ TEST(test_cli, client_empty_start)
 
     std::filesystem::create_directory("client_root");
 
-    const char* args[] = {"client", "--root=client_root", "--secret=secret"};
+    testing_utils::make_config("cfg", R"(
+port=53881
+ip=127.0.0.1
+root=root
+secret=config/secret
+block_size=8096
+number_of_loaders=8
+blocks_in_batch=8
+
+
+)");
+
+    const char* args[] = {"client", "--root=client_root", "--secret=secret", "--config=cfg"};
     client_main(sizeof(args) / sizeof(char*), (char**)args);
 }
 

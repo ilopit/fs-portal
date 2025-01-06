@@ -1,18 +1,18 @@
 #pragma once
 
+#include <engine/files_list.h>
+#include <engine/client.h>
+
+#include <engine/private/file_read_cache.h>
+#include <engine/private/secure_session.h>
+
 #include <filesystem>
 #include <memory>
 #include <cstdint>
 
-#include <engine/private/file_read_cache.h>
-#include <engine/files_list.h>
-#include <engine/client.h>
-#include <engine/private/secure_session.h>
-
 namespace llbridge
 {
-
-struct client_transport_context;
+class client_transport_context;
 class file_recombinator;
 
 class client_impl
@@ -28,7 +28,7 @@ public:
 
     client_impl(std::unique_ptr<client_transport_context> impl,
                 std::unique_ptr<secure_session_factory> secure,
-                std::filesystem::path root);
+                client::config cfg);
 
     client_transport_context&
     transport()
@@ -43,8 +43,7 @@ public:
                   file_recombinator& fapi);
 
     file_list m_lm;
-    std::filesystem::path m_root;
-    client::config m_settings;
+    client::config m_cfg;
     std::unique_ptr<client_transport_context> m_transport;
     std::unique_ptr<secure_session_factory> m_secure_factory;
 };

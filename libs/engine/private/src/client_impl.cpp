@@ -1,34 +1,40 @@
 #include "engine/private/client_impl.h"
 
-#include "engine/private/client_transport_context.h"
 #include "engine/communication_context.h"
+
+#include "engine/private/client_transport_context.h"
 #include "engine/private/file_recombinator.h"
 
 #include <boost/asio.hpp>
 
-llbridge::client_impl::client_impl(std::unique_ptr<llbridge::client_transport_context> impl,
-                std::unique_ptr<llbridge::secure_session_factory> secure,
-                std::filesystem::path root)
-        : m_transport(std::move(impl))
-        , m_root(std::move(root))
-        , m_secure_factory(std::move(secure))
-    {
-    }
+namespace llbridge
+{
 
-
+client_impl::client_impl(std::unique_ptr<client_transport_context> impl,
+                         std::unique_ptr<secure_session_factory> secure,
+                         client::config cfg)
+    : m_lm()
+    , m_cfg(std::move(cfg))
+    , m_transport(std::move(impl))
+    , m_secure_factory(std::move(secure))
+{
+}
 
 void
-llbridge::client_impl::worker_thread(worker_ctx wctx,
-                                     client_transport_context& ctx,
-                                     std::unique_ptr<secure_session> secure,
-                                     file_recombinator& fapi)
+client_impl::worker_thread(worker_ctx wctx,
+                           client_transport_context& ctx,
+                           std::unique_ptr<secure_session> secure,
+                           file_recombinator& fapi)
 {
-    boost::asio::ip::tcp::socket socket{ctx.io_context};
-    boost::asio::connect(socket, ctx.resolver.resolve(ctx.ip, ctx.port));
+    auto conn = ctx.connect();
+    if (!conn)
+    {
+        return;
+    }
 
     SPDLOG_WARN("Worker started {}", wctx.thread_id);
 
-    communication_context cc(&socket, std::move(secure));
+    communication_context cc(&conn->socket(), std::move(secure));
 
     std::vector<write_result_ptr> requests;
 
@@ -75,9 +81,6 @@ llbridge::client_impl::worker_thread(worker_ctx wctx,
     }
 
     SPDLOG_WARN("Worker end {}", wctx.thread_id);
-
-    boost::system::error_code ec;
-
-    socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-    socket.close();
 }
+
+}  // namespace llbridge

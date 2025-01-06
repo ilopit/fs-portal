@@ -23,6 +23,12 @@ public:
 
     struct config
     {
+        bool
+        update_from_config(const std::filesystem::path& p);
+
+        void
+        print();
+
         std::string port = "53881";
         std::filesystem::path root = std::filesystem::current_path() / "root";
         std::filesystem::path secret = std::filesystem::current_path() / "secret";

@@ -17,7 +17,9 @@ server::server(std::shared_ptr<server_impl> impl)
 {
 }
 
-server::server() = default;
+server::server()
+{
+}
 
 server::~server()
 {
@@ -36,6 +38,8 @@ server::make(config cfg)
     {
         cfg.secret = std::filesystem::absolute(cfg.secret);
     }
+
+    cfg.print();
 
     SPDLOG_WARN("Making server...\n  root:{},\n  port:{},\nsecret:{} ", cfg.root.generic_string(),
                 cfg.port, cfg.secret.generic_string());
@@ -118,6 +122,31 @@ server::stop()
     }
 
     return true;
+}
+
+bool
+server::config::update_from_config(const std::filesystem::path& p)
+{
+    auto loaders = utils::load_commmnds_builder()
+                       .add("port", port)
+                       .add("root", root)
+                       .add("secret", secret)
+                       .finalize();
+
+    return utils::generic_kv::load(p, loaders);
+}
+
+void
+server::config::print()
+{
+    constexpr auto r =
+        R"(******* server::config *******
+             port: {}
+             root: {}
+           secret: {}
+)";
+
+    std::cout << fmt::format(r, port, root.generic_string(), secret.generic_string()) << std::endl;
 }
 
 }  // namespace llbridge

@@ -5,14 +5,14 @@
 
 namespace llbridge
 {
-class file
+class psx_file
 {
 public:
-    file();
+    psx_file();
 
-    ~file();
+    ~psx_file();
 
-    file(const std::filesystem::path& path);
+    psx_file(const std::filesystem::path& path);
 
     bool
     is_open() const;

@@ -1,5 +1,5 @@
 #include <engine/private/file_recombinator.h>
-#include <engine/private/file.h>
+#include <engine/private/psx_file.h>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bin_to_hex.h>
@@ -175,7 +175,7 @@ file_recombinator::worker_thread()
     m_start_event.signal();
 
     std::map<uint64_t, write_result_ptr> to_handle;
-    file fh(m_cfg.file);
+    psx_file fh(m_cfg.file);
 
     if (!fh.is_open())
     {

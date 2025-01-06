@@ -23,9 +23,21 @@ client
 client::make(const config& cfg)
 {
     auto ctx = client_transport_context::make(cfg.ip, cfg.port);
+    if (!ctx)
+    {
+        return {};
+    }
     auto secure = secure_session_factory::create(cfg.secret);
+    if (!secure)
+    {
+        return {};
+    }
 
     auto impl = std::make_unique<client_impl>(std::move(ctx), std::move(secure), cfg.root);
+    if (!impl)
+    {
+        return {};
+    }
 
     return client(std::move(impl));
 }
@@ -36,9 +48,16 @@ client::~client() = default;
 bool
 client::open()
 {
+    boost::system::error_code ec{};
     boost::asio::connect(
         m_impl->transport().socket,
-        m_impl->transport().resolver.resolve(m_impl->transport().ip, m_impl->transport().port));
+        m_impl->transport().resolver.resolve(m_impl->transport().ip, m_impl->transport().port), ec);
+
+    if (ec)
+    {
+        SPDLOG_ERROR("Failed to opend {}", ec.what());
+        return false;
+    }
 
     hello_request hr{};
 
@@ -69,6 +88,12 @@ client::list()
     return m_impl->m_lm;
 }
 
+void
+client::print_list()
+{
+    m_impl->m_lm.print();
+}
+
 client::client(std::unique_ptr<client_impl> impl)
     : m_impl(std::move(impl))
 {
@@ -83,24 +108,19 @@ client::sync_all()
 bool
 client::sync(uint64_t file_id)
 {
-    communication_context cc(&m_impl->transport().socket,
-                             m_impl->m_secure_factory->create_session());
-    const uint64_t chunk_size = 1024 * 1024 * 8;
-    auto df_request = download_file_session_request().make_fixed(file_id, chunk_size);
+    boost::asio::ip::tcp::socket socket(m_impl->transport().io_context);
 
-    auto result = cc.send(std::move(df_request));
-    if (!result)
+    boost::system::error_code ec{};
+    boost::asio::connect(
+        socket,
+        m_impl->transport().resolver.resolve(m_impl->transport().ip, m_impl->transport().port), ec);
+
+    if (ec)
     {
         return false;
     }
 
-    download_file_session_response dfs_response{};
-    result = cc.receive(dfs_response);
-    if (!result)
-    {
-        return false;
-    }
-
+    constexpr uint64_t chunk_size = 1024U * 1024U * 8U;
     std::filesystem::path p = m_impl->m_root / m_impl->m_lm.list[file_id].path;
 
     file_recombinator fapi;
@@ -113,6 +133,26 @@ client::sync(uint64_t file_id)
     auto r = fapi.start(wc);
 
     if (!r)
+    {
+        return false;
+    }
+
+    auto resule_cunks = fapi.get_completed_chunks();
+
+    communication_context cc(&socket, m_impl->m_secure_factory->create_session());
+
+    auto df_request =
+        download_file_session_request().make_fixed(file_id, chunk_size, fapi.get_resume_point());
+
+    auto result = cc.send(std::move(df_request));
+    if (!result)
+    {
+        return false;
+    }
+
+    download_file_session_response dfs_response{};
+    result = cc.receive(dfs_response);
+    if (!result)
     {
         return false;
     }

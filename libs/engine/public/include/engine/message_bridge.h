@@ -112,10 +112,10 @@ private:
     }
 
     bool
-    encrypt();
+    encrypt() noexcept;
 
     bool
-    decrypt();
+    decrypt() noexcept;
 
     std::unique_ptr<secure_session> m_encyption_layer;
 

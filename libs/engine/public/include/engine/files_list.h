@@ -25,10 +25,13 @@ struct file_description
 
 struct file_list
 {
-    static file_list
-    init(const std::filesystem::path& root);
+    static bool
+    init(const std::filesystem::path& root, file_list& fl);
 
     std::vector<file_description> list;
+
+    void
+    log_print();
 
     void
     print();

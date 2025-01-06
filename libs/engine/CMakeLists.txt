@@ -15,6 +15,7 @@ add_library(engine
     "private/include/engine/private/server_context.h"
     "private/include/engine/private/server_impl.h"
     "private/include/engine/private/utils.h"
+    "private/include/engine/private/file.h"
 
     "private/src/secure_session.cpp"
     "private/src/binary_stream.cpp"
@@ -23,6 +24,7 @@ add_library(engine
     "private/src/client_transport_context.cpp"
     "private/src/files_list.cpp"
     "private/src/file_read_cache.cpp"
+    "private/src/file.cpp"
     "private/src/file_recombinator.cpp"
     "private/src/message.cpp"
     "private/src/message_bridge.cpp"

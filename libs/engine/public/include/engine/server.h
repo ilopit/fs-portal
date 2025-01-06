@@ -24,12 +24,12 @@ public:
     struct config
     {
         std::string port = "53881";
-        std::filesystem::path root_dir = std::filesystem::current_path() / "files";
-        std::filesystem::path secret_file = std::filesystem::current_path() / "secret";
+        std::filesystem::path root = std::filesystem::current_path() / "root";
+        std::filesystem::path secret = std::filesystem::current_path() / "secret";
     };
 
     static server
-    make(const config& cfg);
+    make(config cfg);
 
     bool
     start();

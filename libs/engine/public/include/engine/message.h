@@ -204,14 +204,16 @@ struct download_file_session_request_fixed_part
 {
     download_file_session_request_fixed_part() = default;
 
-    download_file_session_request_fixed_part(uint64_t i, uint64_t size)
+    download_file_session_request_fixed_part(uint64_t i, uint64_t size, uint64_t o)
         : id(i)
         , chunk_size(size)
+        , offset(o)
     {
     }
 
     uint64_t id;
     uint64_t chunk_size;
+    uint64_t offset;
 };
 
 using download_file_session_request = fixed_message<download_file_session_request_fixed_part,

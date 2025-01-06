@@ -1,6 +1,9 @@
 #include <engine/private/file_recombinator.h>
+#include <engine/private/file.h>
 
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/bin_to_hex.h>
+#include <cstdio>
 
 namespace llbridge
 {
@@ -21,17 +24,54 @@ file_recombinator::start(const open_config& rc)
     {
         return false;
     }
+    m_cfg = rc;
+
+    if (!rc.file.is_absolute())
+    {
+        return false;
+    }
 
     std::error_code ec;
-    std::filesystem::create_directories(rc.file.parent_path(), ec);
 
-    m_file_handle.open(rc.file, std::ios_base::binary | std::fstream::out);
+    if (!std::filesystem::exists(rc.file.parent_path(), ec) &&
+        !std::filesystem::create_directories(rc.file.parent_path(), ec))
+    {
+        SPDLOG_ERROR("Unable to create a directory {}", ec.message());
+
+        return false;
+    }
+
+    m_file_handle.open(rc.file, std::ios_base::binary | std::fstream::out | std::fstream::app);
 
     if (!m_file_handle.is_open())
     {
         return false;
     }
+
+    auto lock_file = rc.file.parent_path() / (rc.file.filename().generic_string() + ".tmp");
+    uint64_t offset = 0;
+
+    m_file_lock_handle.open(lock_file, std::fstream::app | std::fstream::in | std::fstream::out);
+    if (!m_file_lock_handle.is_open())
+    {
+        return false;
+    }
+
+    m_file_lock_handle >> offset;
+
+    auto current_file_size = (uint64_t)m_file_handle.seekp(0, std::ios_base::end).tellp();
+    m_file_handle.seekp(0, std::ios_base::beg);
+
+    SPDLOG_INFO("Last recorded offset {}, file_size {}", offset, current_file_size);
+    if (current_file_size < offset)
+    {
+        SPDLOG_ERROR("Unrecovarable");
+        return false;
+    }
+
     m_file_size = rc.file_size;
+
+    // m_complited_chunks = offset / rc.chunk_size;
 
     m_chunck_size = rc.chunk_size;
     m_batch_size = rc.batch_size;
@@ -47,6 +87,8 @@ file_recombinator::start(const open_config& rc)
         "file_size = {}\n  number_of_chunks = {}",
         rc.file.generic_string(), m_chunck_size, m_batch_size, m_file_size, m_number_of_chunks);
 
+    m_file_handle.clear();
+    m_file_handle.close();
     return true;
 }
 
@@ -128,29 +170,50 @@ file_recombinator::release_free_chunk(data_chunk_ptr ptr)
 void
 file_recombinator::worker_thread()
 {
+    SPDLOG_WARN("Starting file recombinator!");
+
     m_start_event.signal();
+
+    std::map<uint64_t, write_result_ptr> to_handle;
+    file fh(m_cfg.file);
+
+    if (!fh.is_open())
+    {
+        goto clean_up;
+    }
 
     while (m_is_running)
     {
-        std::map<uint64_t, write_result_ptr> to_handle;
-
-        auto lock = m_cache_event.lock();
-
-        if (m_request.size() < m_batch_size &&
-            m_request.size() != (m_number_of_chunks - m_complited_chunks))
         {
-            m_cache_event.wait(lock);
+            auto lock = m_cache_event.lock();
+            if (m_request.size() < m_batch_size &&
+                m_request.size() != (m_number_of_chunks - m_complited_chunks))
+            {
+                m_cache_event.wait(lock);
+            }
+            m_request.swap(to_handle);
         }
-
-        m_request.swap(to_handle);
 
         for (auto& item : to_handle)
         {
             auto dcp = item.second->dcp();
 
-            m_file_handle.seekp(get_offset(dcp->id()));
+            auto offset = get_offset(dcp->id());
 
-            m_file_handle.write((char*)dcp->data.data(), dcp->get_size());
+            SPDLOG_INFO("Writing id {} , size {}, at {}", dcp->id(), dcp->get_size(), offset);
+
+            if (!fh.seek_to(offset, SEEK_SET))
+            {
+                SPDLOG_ERROR("fseek failed");
+                goto clean_up;
+            }
+
+            if (fh.write(dcp->data) != dcp->get_size())
+            {
+                SPDLOG_ERROR("fwrite failed {}", dcp->get_size());
+                goto clean_up;
+            }
+            fh.flush();
 
             {
                 std::lock_guard lg(m_free_lock);
@@ -160,16 +223,38 @@ file_recombinator::worker_thread()
 
             item.second->done();
             m_complited_chunks++;
+
+            m_file_lock_handle << offset;
+            m_file_lock_handle.flush();
         }
+
+        to_handle.clear();
     }
 
-    m_file_handle.close();
+clean_up:
+
+    for (auto& h : to_handle)
+    {
+        h.second->done();
+    }
+    for (auto& h : m_request)
+    {
+        h.second->done();
+    }
+
+    SPDLOG_WARN("End file recombinator!");
 }
 
 void
 file_recombinator::entry_thread_main(file_recombinator& self)
 {
     self.worker_thread();
+}
+
+write_result::write_result(data_chunk_ptr dcp)
+    : m_id(dcp->id())
+    , m_dcp(std::move(dcp))
+{
 }
 
 }  // namespace llbridge

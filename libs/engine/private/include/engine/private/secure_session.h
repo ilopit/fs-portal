@@ -42,7 +42,7 @@ class secure_session_factory
 {
 public:
     static std::unique_ptr<secure_session_factory>
-    create(const std::filesystem::path& secret);
+    create(const std::filesystem::path& secret) noexcept;
 
     std::unique_ptr<secure_session>
     create_session();

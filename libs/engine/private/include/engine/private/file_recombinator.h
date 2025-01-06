@@ -16,11 +16,7 @@ struct write_result
     friend class file_cache;
 
 public:
-    write_result(data_chunk_ptr dcp)
-        : m_id(dcp->id())
-        , m_dcp(std::move(dcp))
-    {
-    }
+    write_result(data_chunk_ptr dcp);
 
     bool
     wait()
@@ -93,6 +89,18 @@ public:
     }
 
     uint64_t
+    get_completed_chunks() const
+    {
+        return m_complited_chunks;
+    }
+
+    uint64_t
+    get_resume_point() const
+    {
+        return m_resume_point;
+    }
+
+    uint64_t
     get_chunck_size(uint64_t chunk_id) const
     {
         return (chunk_id != (m_number_of_chunks - 1)) ? m_chunck_size
@@ -112,16 +120,19 @@ private:
     static void
     entry_thread_main(file_recombinator& self);
 
+    open_config m_cfg;
     uint64_t m_chunck_size = 0;
     uint64_t m_number_of_chunks = 0;
     uint64_t m_file_size = 0;
     uint64_t m_batch_size = 0;
-    uint64_t m_complited_chunks = 0;
+    std::atomic<uint64_t> m_complited_chunks = 0;
+    uint64_t m_resume_point = 0;
 
     std::thread m_worker_thread;
     std::atomic_bool m_is_running;
 
     std::ofstream m_file_handle;
+    std::fstream m_file_lock_handle;
 
     utils::rt_event m_cache_event;
     utils::rt_event m_start_event;

@@ -13,8 +13,8 @@ make_a_secret()
 {
     std::ofstream fs(secret_file);
 
-    fs << "01234567890ABCDEF" << std::endl;
-    fs << "FEDCBA09876543210" << std::endl;
+    fs << "0123456789ABCDEF" << std::endl;
+    fs << "FEDCBA9876543210" << std::endl;
 }
 
 TEST(test_messages, header)
@@ -33,17 +33,18 @@ TEST(test_messages, all)
 {
     make_a_secret();
 
-    auto ec = secure_session_factory::create(secret_file)->create_session();
+    auto ssf = secure_session_factory::create(secret_file);
 
     {
-        message_bridge mh;
-        ASSERT_TRUE(mh.write(download_file_session_request().make_fixed(11, 22)));
+        message_bridge mh(ssf->create_session());
+        ASSERT_TRUE(mh.write(download_file_session_request().make_fixed(11, 22, 33)));
 
         download_file_session_request receive_msg;
         ASSERT_TRUE(mh.read(receive_msg));
 
         ASSERT_EQ(receive_msg.fixed.id, 11);
         ASSERT_EQ(receive_msg.fixed.chunk_size, 22);
+        ASSERT_EQ(receive_msg.fixed.offset, 33);
     }
 
     //     {

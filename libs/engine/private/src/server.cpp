@@ -25,15 +25,43 @@ server::~server()
 }
 
 server
-server::make(const config& cfg)
+server::make(config cfg)
 {
+    if (!cfg.root.is_absolute())
+    {
+        cfg.root = std::filesystem::absolute(cfg.root);
+    }
+
+    if (!cfg.secret.is_absolute())
+    {
+        cfg.secret = std::filesystem::absolute(cfg.secret);
+    }
+
+    SPDLOG_WARN("Making server...\n  root:{},\n  port:{},\nsecret:{} ", cfg.root.generic_string(),
+                cfg.port, cfg.secret.generic_string());
+
     auto ctx = server_transport_context::make(cfg.port);
+    if (!ctx)
+    {
+        SPDLOG_ERROR("Failed to create a server");
+        return {};
+    }
 
-    auto ssf = secure_session_factory::create(cfg.secret_file);
+    auto ssf = secure_session_factory::create(cfg.secret);
 
-    auto impl = std::make_unique<server_impl>(cfg.root_dir, std::move(ctx), std::move(ssf));
+    if (!ssf)
+    {
+        SPDLOG_ERROR("Failed to create a server");
+        return {};
+    }
 
-    impl->m_file_list = file_list::init(cfg.root_dir);
+    auto impl = std::make_unique<server_impl>(cfg.root, std::move(ctx), std::move(ssf));
+
+    if (!file_list::init(cfg.root, impl->m_file_list))
+    {
+        SPDLOG_ERROR("Failed to create a server");
+        return {};
+    }
 
     return server(std::move(impl));
 }
@@ -41,6 +69,11 @@ server::make(const config& cfg)
 bool
 server::start()
 {
+    if (!m_impl)
+    {
+        return false;
+    }
+
     m_impl->transport_context().start();
 
     start_impl();
@@ -79,7 +112,10 @@ server::start_impl()
 bool
 server::stop()
 {
-    m_impl->transport_context().stop();
+    if (m_impl)
+    {
+        m_impl->transport_context().stop();
+    }
 
     return true;
 }

@@ -14,15 +14,12 @@ message_bridge::message_bridge(std::unique_ptr<secure_session> secure)
 
     get_header()->type = message_type::none;
 }
-message_bridge::message_bridge()
-{
-}
-message_bridge::~message_bridge()
-{
-}
+
+message_bridge::message_bridge() = default;
+message_bridge::~message_bridge() = default;
 
 bool
-message_bridge::encrypt()
+message_bridge::encrypt() noexcept
 {
     try
     {
@@ -38,7 +35,7 @@ message_bridge::encrypt()
 }
 
 bool
-message_bridge::decrypt()
+message_bridge::decrypt() noexcept
 {
     try
     {

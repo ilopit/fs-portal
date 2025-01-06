@@ -74,7 +74,7 @@ connection_session::on_download_file_request(const download_file_session_request
         return message_result::error;
     }
 
-    auto& path = m_server_impl->m_root;
+    auto path = m_server_impl->m_root;
     path /= m_server_impl->m_file_list.list[dfs_request.fixed.id].path;
 
     static uint64_t session_id = 0;
@@ -169,7 +169,6 @@ connection_session::on_message_received()
         {
             result = message_result::error;
         }
-
         break;
     }
     case message_type::download_file_session_request:
@@ -204,9 +203,16 @@ connection_session::on_message_received()
 
     if (result == message_result::error || result == message_result::end)
     {
-        //         error_message em{};
-        //         m_ctx.send(std::move(em));
+        SPDLOG_ERROR("Error {} {} ", (int)type, (int)result);
+        error_message em{};
 
+        m_ctx.m_bridge.reset();
+        if (!m_ctx.send(std::move(em)))
+        {
+            SPDLOG_ERROR("Sending error failed");
+        }
+
+        m_ctx.m_socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both);
         m_ctx.m_socket->close();
     }
 }

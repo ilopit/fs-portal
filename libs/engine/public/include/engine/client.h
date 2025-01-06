@@ -15,7 +15,7 @@ class client
 public:
     struct config
     {
-        std::string port = "5050";
+        std::string port = "53881";
         std::string ip = "127.0.0.1";
         std::filesystem::path root = std::filesystem::current_path() / "root";
         std::filesystem::path secret = std::filesystem::current_path() / "config/secret";
@@ -32,6 +32,9 @@ public:
 
     const file_list&
     list();
+
+    void
+    print_list();
 
     bool
     sync_all();

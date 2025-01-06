@@ -68,4 +68,13 @@ utils::rt_event::lock()
     return std::unique_lock<std::mutex>(m_lock);
 }
 
+void
+trim_eols(std::string& str)
+{
+    for (auto itr = str.rbegin(); itr != str.rend() && (*itr == '\n' || *itr == '\r'); ++itr)
+    {
+        str.pop_back();
+    }
+}
+
 }  // namespace llbridge

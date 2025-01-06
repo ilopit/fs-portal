@@ -12,6 +12,8 @@
 
 namespace llbridge
 {
+void
+trim_eols(std::string& str);
 
 struct data_chunk
 {

@@ -1,6 +1,7 @@
 #include "engine/private/secure_session.h"
 
 #include <engine/message.h>
+#include <engine/private/utils.h>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bin_to_hex.h>
@@ -10,7 +11,7 @@ namespace llbridge
 {
 
 std::unique_ptr<secure_session_factory>
-secure_session_factory::create(const std::filesystem::path& secret)
+secure_session_factory::create(const std::filesystem::path& secret) noexcept
 {
     std::ifstream secret_file(secret);
 
@@ -20,33 +21,49 @@ secure_session_factory::create(const std::filesystem::path& secret)
         return nullptr;
     }
 
-    std::string v;
+    try
+    {
+        std::string tmp;
 
-    std::getline(secret_file, v);
-    auto master_key = Botan::hex_decode(v.data(), v.size());
+        std::getline(secret_file, tmp);
+        trim_eols(tmp);
 
-    std::getline(secret_file, v);
-    auto salt = Botan::hex_decode(v.data(), v.size());
+        auto master_key = Botan::hex_decode(tmp.data(), tmp.size());
+
+        std::getline(secret_file, tmp);
+        trim_eols(tmp);
+
+        auto salt = Botan::hex_decode(tmp.data(), tmp.size());
 
 #if defined(_DEBUG)
-    constexpr size_t M = 16;
-    constexpr size_t t = 1;
-    constexpr size_t p = 1;
+        constexpr size_t M = 16;
+        constexpr size_t t = 1;
+        constexpr size_t p = 1;
 #else
-    constexpr size_t M = 256 * 1024;
-    constexpr size_t t = 4;
-    constexpr size_t p = 2;
+        constexpr size_t M = 256 * 1024;
+        constexpr size_t t = 4;
+        constexpr size_t p = 2;
 #endif
 
-    auto pbkdf = Botan::PasswordHashFamily::create_or_throw("Argon2id")->from_params(M, t, p);
-    BOTAN_ASSERT_NONNULL(pbkdf);
+        auto pbkdf = Botan::PasswordHashFamily::create_or_throw("Argon2id")->from_params(M, t, p);
+        BOTAN_ASSERT_NONNULL(pbkdf);
 
-    std::string_view password;
+        auto ssf = std::unique_ptr<secure_session_factory>(new secure_session_factory());
+        pbkdf->hash(ssf->m_application_session_key,
+                    std::string_view((char*)master_key.data(), master_key.size()), salt);
 
-    auto ssf = std::unique_ptr<secure_session_factory>();
-    pbkdf->hash(ssf->m_application_session_key, password, salt);
+        return ssf;
+    }
+    catch (std::exception& e)
+    {
+        SPDLOG_ERROR("Failed to create ssf, {}", e.what());
+    }
+    catch (...)
+    {
+        SPDLOG_ERROR("Failed to create ssf, unknown");
+    }
 
-    return ssf;
+    return nullptr;
 }
 
 std::unique_ptr<secure_session>

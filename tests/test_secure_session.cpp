@@ -3,26 +3,17 @@
 #include <fstream>
 
 #include "botan_all.h"
+#include "testing_utils.h"
 
 #include <gtest/gtest.h>
 
 using namespace llbridge;
 
-constexpr auto secret_file = "secret";
-void
-make_a_secret()
-{
-    std::ofstream fs(secret_file);
-
-    fs << "01234567890ABCDEF" << std::endl;
-    fs << "FEDCBA09876543210" << std::endl;
-}
-
 TEST(test_encryption, fixed)
 {
-    make_a_secret();
+    testing_utils::make_a_secret();
 
-    auto ec = secure_session_factory::create(secret_file)->create_session();
+    auto ec = secure_session_factory::create(testing_utils::secret_file)->create_session();
 
     message_header mh{};
 
@@ -62,9 +53,9 @@ TEST(test_encryption, fixed)
 
 TEST(test_encryption, dynamic)
 {
-    make_a_secret();
+    testing_utils::make_a_secret();
 
-    auto ec = secure_session_factory::create(secret_file)->create_session();
+    auto ec = secure_session_factory::create(testing_utils::secret_file)->create_session();
 
     message_header mh{};
 

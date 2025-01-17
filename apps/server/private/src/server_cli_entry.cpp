@@ -45,6 +45,10 @@ server_main(int argc, char** argv)
         {
             timeout = std::stoi(value.substr(sizeof("--timeout=") - 1));
         }
+        else if (value.starts_with("--config="))
+        {
+            continue;
+        }
         else
         {
             SPDLOG_ERROR("Unsupported arg [{}]", value);

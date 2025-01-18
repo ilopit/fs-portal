@@ -27,7 +27,7 @@ communication_context::receive_extra_bytes(uint64_t expected)
     {
         if (m_bridge.dynamic_ctx().capacity() < expected)
         {
-            SPDLOG_WARN("Performance hit! Resizing dctx with capacity {} => {}",
+            SPDLOG_INFO("Performance hit! Resizing dctx with capacity {} => {}",
                         m_bridge.dynamic_ctx().capacity(), expected);
         }
 

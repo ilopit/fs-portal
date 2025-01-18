@@ -25,7 +25,7 @@ public:
         std::string ip = "127.0.0.1";
         std::filesystem::path root = std::filesystem::current_path() / "root";
         std::filesystem::path secret = std::filesystem::current_path() / "config/secret";
-        uint64_t block_size = 1024U * 1024U * 1U;
+        uint64_t block_size = 1024U * 1024U * 16U;
         uint64_t number_of_loaders = 8U;
         uint64_t blocks_in_batch = 8U;
     };

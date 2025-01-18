@@ -19,6 +19,8 @@ struct test_llbridge : public ::testing::Test
     void
     SetUp()
     {
+        spdlog::set_level(spdlog::level::warn);
+
         testing_utils::make_a_secret();
 
         std::error_code ec;
@@ -26,7 +28,7 @@ struct test_llbridge : public ::testing::Test
         std::filesystem::create_directory(server_root, ec);
 
         auto str = fmt::format("openssl rand -out {}/{} --base64 {}", server_root.generic_string(),
-                               big_file.generic_string(), (1 << 23));
+                               big_file.generic_string(), (1 << 30));
         ::system(str.c_str());
     }
 };

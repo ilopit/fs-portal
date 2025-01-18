@@ -13,16 +13,23 @@ server_transport_context::make(std::string port)
 void
 server_transport_context::start()
 {
-    m_worker = std::thread([this]() { m_io_context.run(); });
+    for (int i = 0; i < 8; ++i)
+    {
+        m_workers.emplace_back(std::thread([this]() { m_io_context.run(); }));
+    }
 }
 
 void
 server_transport_context::stop()
 {
-    if (m_worker.joinable())
+    m_io_context.stop();
+
+    for (auto& w : m_workers)
     {
-        m_io_context.stop();
-        m_worker.join();
+        if (w.joinable())
+        {
+            w.join();
+        }
     }
 }
 

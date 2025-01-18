@@ -106,7 +106,7 @@ secure_session::encrypt(message_header& mh, std::vector<uint8_t>& fctx, std::vec
         {
             if (dctx.capacity() < encypted_extra_size)
             {
-                SPDLOG_WARN("Performance hit! Resizing dctx from {} => {}", dctx.capacity(),
+                SPDLOG_INFO("Performance hit! Resizing dctx from {} => {}", dctx.capacity(),
                             encypted_extra_size);
             }
 

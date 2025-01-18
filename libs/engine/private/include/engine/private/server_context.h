@@ -17,19 +17,19 @@ struct server_transport_context
     static std::unique_ptr<server_transport_context>
     make(std::string port);
 
+    server_transport_context(std::uint16_t port);
+
     void
     start();
 
     void
     stop();
 
-    server_transport_context(std::uint16_t port);
-
     boost::asio::io_context m_io_context;
     boost::asio::io_context::work m_work;
     boost::asio::ip::tcp::acceptor m_acceptor;
 
-    std::thread m_worker;
+    std::vector<std::thread> m_workers;
 };
 
 }  // namespace llbridge

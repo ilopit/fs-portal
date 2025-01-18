@@ -18,6 +18,7 @@ server::server(std::shared_ptr<server_impl> impl)
 }
 
 server::server()
+    : m_impl(nullptr)
 {
 }
 

@@ -15,7 +15,35 @@ ts_miliseconds()
                std::chrono::high_resolution_clock::now().time_since_epoch())
         .count();
 }
+
 }  // namespace
+
+void
+statistics::stats::update()
+{
+    record new_state = current_state();
+    auto delta = new_state - last_state;
+
+    agg_state += delta;
+
+    windows_records.push_back(delta);
+
+    auto& to_drop = windows_records.front();
+
+    agg_state -= to_drop;
+
+    windows_records.pop_front();
+
+    last_state = new_state;
+}
+
+statistics::record
+statistics::stats::current_state()
+{
+    return record{.network_bytes_recv = network_bytes_recv.load(),
+                  .network_bytes_send = network_bytes_send.load(),
+                  .duration = ts_miliseconds()};
+}
 
 statistics::statistics(std::chrono::milliseconds delay)
     : m_running(true)
@@ -23,29 +51,26 @@ statistics::statistics(std::chrono::milliseconds delay)
     m_worker = std::thread(
         [this](std::chrono::milliseconds delay)
         {
-            uint64_t time_stamps = ts_miliseconds();
+            m_state.last_state = m_state.current_state();
 
             while (m_running)
             {
                 std::this_thread::sleep_for(delay);
-
-                const auto network_send_bytes = m_state.network_bytes_send.load();
-                const auto network_recv_bytes = m_state.network_bytes_received.load();
-                const auto fs = m_state.fs_bytes.load();
+                m_state.update();
 
                 constexpr double mb = 1024.0 * 1024.0;
 
-                const double total_network_send_mb = network_send_bytes / mb;
-                const double total_network_receive_mb = network_recv_bytes / mb;
+                const double total_network_send_mb = m_state.network_bytes_send / mb;
+                const double total_network_recv_mb = m_state.network_bytes_recv / mb;
                 const double total_fs_mb = m_state.fs_bytes / mb;
 
-                auto delta_seconds = (ts_miliseconds() - time_stamps) * 0.001;
+                auto delta_seconds = m_state.agg_state.duration * 0.001;
 
                 const auto network_send_speed =
-                    (network_send_bytes - m_state.last_network_bytes_send) / (delta_seconds * mb);
+                    (m_state.agg_state.network_bytes_send) / (delta_seconds * mb);
 
                 const auto network_recv_speed =
-                    (network_recv_bytes - m_state.last_network_bytes_recv) / (delta_seconds * mb);
+                    (m_state.agg_state.network_bytes_recv) / (delta_seconds * mb);
 
                 constexpr auto fmt = R"(
                     delta : {:.3f} seconds
@@ -55,13 +80,9 @@ statistics::statistics(std::chrono::milliseconds delay)
                recv speed : {:.3f} MBytes/second)";
 
                 std::cout << fmt::format(fmt, delta_seconds, total_network_send_mb,
-                                         total_network_receive_mb, network_send_speed,
+                                         total_network_recv_mb, network_send_speed,
                                          network_recv_speed)
                           << std::endl;
-
-                time_stamps = ts_miliseconds();
-                m_state.last_network_bytes_send = network_send_bytes;
-                m_state.last_network_bytes_recv = network_recv_bytes;
             }
         },
         delay);
